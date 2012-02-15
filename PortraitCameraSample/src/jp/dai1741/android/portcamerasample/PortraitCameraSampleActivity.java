@@ -7,9 +7,11 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -58,19 +60,31 @@ public class PortraitCameraSampleActivity extends Activity {
             rotatedBitmap = getMutableRotatedCameraBitmap(bitmap, degrees);
             // rotatedBitmap = getImmutableRotatedCameraBitmap(bitmap, degrees);
 
-            ImageView iv = new ImageView(PortraitCameraSampleActivity.this);
-            mRootViewGroup.addView(iv);
+            final View pictureView = getLayoutInflater().inflate(R.layout.picture, null);
+            mRootViewGroup.addView(pictureView);
+            ImageView iv = (ImageView) findViewById(R.id.picture);
             iv.setImageBitmap(rotatedBitmap);
-            iv.setOnClickListener(new View.OnClickListener() {
+            final Button saveButton = (Button) findViewById(R.id.save_button);
+            View.OnClickListener listener = new View.OnClickListener() {
 
                 @Override
                 public void onClick(View v) {
+                    if (v.equals(saveButton)) {
+                        String path = MediaStore.Images.Media.insertImage(
+                                PortraitCameraSampleActivity.this.getContentResolver(),
+                                rotatedBitmap, "", "");
+                        Toast.makeText(PortraitCameraSampleActivity.this,
+                                "画像を保存しました: " + path, Toast.LENGTH_LONG).show();
+                    }
                     Log.d(TAG, "Picture dismissed");
-                    mRootViewGroup.removeView(v);
+                    mRootViewGroup.removeView(pictureView);
                     mCameraAvailable = true;
                     mCameraPreviewView.mCamera.startPreview();
                 }
-            });
+            };
+            iv.setOnClickListener(listener);
+            saveButton.setOnClickListener(listener);
+
         }
     };
 
