@@ -1,3 +1,22 @@
+//This class is derived from The Android Open Source Project.
+
+/*
+ * Copyright (C) 2007 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package jp.dai1741.android.portcamerasample;
 
 import android.app.Activity;
@@ -10,6 +29,12 @@ import java.io.IOException;
 import java.util.List;
 
 
+/**
+ * カメラ画面を表示するためのビュー。
+ * 
+ * @author dai
+ *
+ */
 public class CameraPreviewView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder mHolder;
     Camera mCamera;
@@ -136,6 +161,10 @@ public class CameraPreviewView extends SurfaceView implements SurfaceHolder.Call
             break;
         }
         return (90 + 360 - degrees) % 360;
+        // 画面の向きに変化を打ち消す方向にカメラの向きを設定する必要があるため、
+        // Display#getRotation()で得られた数値をマイナスにする。
+        // Androidは縦向き基本だがカメラは横向き基本なため、90度を追加する。
+        // 戻り値が正の一定値になるように、360を足して360で余りを取る。
     }
 
 }

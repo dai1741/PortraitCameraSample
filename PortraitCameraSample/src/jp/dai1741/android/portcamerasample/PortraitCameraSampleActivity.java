@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 public class PortraitCameraSampleActivity extends Activity {
     private static final String TAG = "PortraitCameraSampleActivity";
+    
     private CameraPreviewView mCameraPreviewView;
     private ViewGroup mRootViewGroup;
 
@@ -43,54 +44,22 @@ public class PortraitCameraSampleActivity extends Activity {
         Toast.makeText(this, "タップして撮影", Toast.LENGTH_SHORT).show();
     }
 
+    /** カメラが現在使用可能かどうか */
     private boolean mCameraAvailable = true;
 
-    private final Camera.PictureCallback kPictureCallback = new Camera.PictureCallback() {
-
-        @Override
-        public void onPictureTaken(byte[] data, Camera camera) {
-            Log.d(TAG, "Camera.PictureCallback#onPictureTaken()");
-
-            Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-            int degrees = CameraPreviewView
-                    .getCameraDisplayOrientation(PortraitCameraSampleActivity.this);
-            Log.d(TAG, "Camera rotation degrees: " + degrees);
-
-            final Bitmap rotatedBitmap;
-            rotatedBitmap = getMutableRotatedCameraBitmap(bitmap, degrees);
-            // rotatedBitmap = getImmutableRotatedCameraBitmap(bitmap, degrees);
-
-            final View pictureView = getLayoutInflater().inflate(R.layout.picture, null);
-            mRootViewGroup.addView(pictureView);
-            ImageView iv = (ImageView) findViewById(R.id.picture);
-            iv.setImageBitmap(rotatedBitmap);
-            final Button saveButton = (Button) findViewById(R.id.save_button);
-            View.OnClickListener listener = new View.OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    if (v.equals(saveButton)) {
-                        String path = MediaStore.Images.Media.insertImage(
-                                PortraitCameraSampleActivity.this.getContentResolver(),
-                                rotatedBitmap, "", "");
-                        Toast.makeText(PortraitCameraSampleActivity.this,
-                                "画像を保存しました: " + path, Toast.LENGTH_LONG).show();
-                    }
-                    Log.d(TAG, "Picture dismissed");
-                    mRootViewGroup.removeView(pictureView);
-                    mCameraAvailable = true;
-                    mCameraPreviewView.mCamera.startPreview();
-                }
-            };
-            iv.setOnClickListener(listener);
-            saveButton.setOnClickListener(listener);
-
-        }
-    };
-
+    /**
+     * カメラで撮った写真を正しい向きにして返す。
+     * 返される画像は変更可能となる。
+     * 
+     * @param cameraBitmap
+     *            カメラで撮った正しい向きでないBitmap
+     * @param degrees
+     *            この写真を取ったときの画面の向き。0、90、180、270のいずれか。
+     * @return 正しい向きのミュータブルなBitmap
+     */
     private static Bitmap getMutableRotatedCameraBitmap(Bitmap cameraBitmap, int degrees) {
         int width, height;
-        if (degrees % 180 == 0) {
+        if (degrees % 180 == 0) { // 画面が横向きなら
             width = cameraBitmap.getWidth();
             height = cameraBitmap.getHeight();
         }
@@ -109,10 +78,72 @@ public class PortraitCameraSampleActivity extends Activity {
         return bitmap;
     }
 
+
+    /**
+     * カメラで撮った写真を正しい向きにして返す。
+     * 返される画像は変更不可能となる。
+     * 
+     * @param cameraBitmap
+     *            カメラで撮った正しい向きでないBitmap
+     * @param degrees
+     *            この写真を取ったときの画面の向き。0、90、180、270のいずれか。
+     * @return 正しい向きのイミュータブルなBitmap
+     */
     private static Bitmap getImmutableRotatedCameraBitmap(Bitmap cameraBitmap, int degrees) {
         Matrix m = new Matrix();
         m.postRotate(degrees);
         return Bitmap.createBitmap(cameraBitmap, 0, 0, cameraBitmap.getWidth(),
                 cameraBitmap.getHeight(), m, false);
+    }
+
+    /**
+     * 写真を撮ったときに呼ばれるコールバック関数
+     */
+    private final Camera.PictureCallback kPictureCallback = new Camera.PictureCallback() {
+
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+            Log.d(TAG, "Camera.PictureCallback#onPictureTaken()");
+
+            Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+            int degrees = CameraPreviewView
+                    .getCameraDisplayOrientation(PortraitCameraSampleActivity.this);
+            Log.d(TAG, "Camera rotation degrees: " + degrees);
+
+            Bitmap rotatedBitmap = getMutableRotatedCameraBitmap(bitmap, degrees);
+            // Bitmap rotatedBitmap = getImmutableRotatedCameraBitmap(bitmap, degrees);
+
+            showPicture(rotatedBitmap);
+
+        }
+    };
+
+    private void showPicture(final Bitmap bitmap) {
+
+        final View pictureView = getLayoutInflater().inflate(R.layout.picture, null);
+        mRootViewGroup.addView(pictureView);
+        ImageView iv = (ImageView) findViewById(R.id.picture);
+        iv.setImageBitmap(bitmap);
+        final Button saveButton = (Button) findViewById(R.id.save_button);
+        View.OnClickListener listener = new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                if (v.equals(saveButton)) {
+                    String path = MediaStore.Images.Media.insertImage(
+                            PortraitCameraSampleActivity.this.getContentResolver(),
+                            bitmap, "", "");
+                    Toast.makeText(PortraitCameraSampleActivity.this,
+                            "画像を保存しました: " + path, Toast.LENGTH_LONG).show();
+                }
+                Log.d(TAG, "Picture dismissed");
+                mRootViewGroup.removeView(pictureView);
+                
+                mCameraPreviewView.mCamera.startPreview(); // カメラを再起動
+                mCameraAvailable = true;
+            }
+        };
+        iv.setOnClickListener(listener);
+        saveButton.setOnClickListener(listener);
     }
 }
