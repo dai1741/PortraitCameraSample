@@ -10,11 +10,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 public class PortraitCameraSampleActivity extends Activity {
     private static final String TAG = "PortraitCameraSampleActivity";
     private CameraPreviewView mCameraPreviewView;
+    private ViewGroup mRootViewGroup;
 
     /** Called when the activity is first created. */
     @Override
@@ -23,32 +25,52 @@ public class PortraitCameraSampleActivity extends Activity {
         setContentView(R.layout.main);
 
         mCameraPreviewView = new CameraPreviewView(this);
-        ViewGroup root = (ViewGroup) findViewById(R.id.root_layout);
-        root.addView(mCameraPreviewView);
+        mRootViewGroup = (ViewGroup) findViewById(R.id.root_layout);
+        mRootViewGroup.addView(mCameraPreviewView);
         mCameraPreviewView.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                mCameraPreviewView.mCamera
-                        .takePicture(null, null, null, kPictureCallback);
+                if (mCameraAvailable) {
+                    mCameraPreviewView.mCamera.takePicture(null, null, null,
+                            kPictureCallback);
+                    mCameraAvailable = false;
+                }
             }
         });
         Toast.makeText(this, "タップして撮影", Toast.LENGTH_SHORT).show();
     }
+
+    private boolean mCameraAvailable = true;
 
     private final Camera.PictureCallback kPictureCallback = new Camera.PictureCallback() {
 
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
             Log.d(TAG, "Camera.PictureCallback#onPictureTaken()");
-            
+
             Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
             int degrees = CameraPreviewView
                     .getCameraDisplayOrientation(PortraitCameraSampleActivity.this);
             Log.d(TAG, "Camera rotation degrees: " + degrees);
 
-            bitmap = getMutableRotatedCameraBitmap(bitmap, degrees);
-            // bitmap = getImmutableRotatedCameraBitmap(bitmap, degrees);
+            final Bitmap rotatedBitmap;
+            rotatedBitmap = getMutableRotatedCameraBitmap(bitmap, degrees);
+            // rotatedBitmap = getImmutableRotatedCameraBitmap(bitmap, degrees);
+
+            ImageView iv = new ImageView(PortraitCameraSampleActivity.this);
+            mRootViewGroup.addView(iv);
+            iv.setImageBitmap(rotatedBitmap);
+            iv.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    Log.d(TAG, "Picture dismissed");
+                    mRootViewGroup.removeView(v);
+                    mCameraAvailable = true;
+                    mCameraPreviewView.mCamera.startPreview();
+                }
+            });
         }
     };
 
