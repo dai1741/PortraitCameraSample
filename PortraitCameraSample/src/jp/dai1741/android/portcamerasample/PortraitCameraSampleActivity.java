@@ -89,6 +89,7 @@ public class PortraitCameraSampleActivity extends Activity {
      *            この写真を取ったときの画面の向き。0、90、180、270のいずれか。
      * @return 正しい向きのイミュータブルなBitmap
      */
+    @SuppressWarnings("unused")
     private static Bitmap getImmutableRotatedCameraBitmap(Bitmap cameraBitmap, int degrees) {
         Matrix m = new Matrix();
         m.postRotate(degrees);

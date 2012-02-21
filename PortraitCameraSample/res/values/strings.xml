@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="hello">Hello World, PortraitCameraSampleActivity!</string>
     <string name="app_name">PortraitCameraSample</string>
+    <string name="button_save_shot">保存</string>
+    <string name="contentdesc_shot_image">写真</string>
 
 </resources>
