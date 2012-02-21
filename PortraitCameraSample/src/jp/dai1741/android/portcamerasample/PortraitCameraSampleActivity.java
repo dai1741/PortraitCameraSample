@@ -17,7 +17,7 @@ import android.widget.Toast;
 
 public class PortraitCameraSampleActivity extends Activity {
     private static final String TAG = "PortraitCameraSampleActivity";
-    
+
     private CameraPreviewView mCameraPreviewView;
     private ViewGroup mRootViewGroup;
 
@@ -30,11 +30,13 @@ public class PortraitCameraSampleActivity extends Activity {
         mCameraPreviewView = new CameraPreviewView(this);
         mRootViewGroup = (ViewGroup) findViewById(R.id.root_layout);
         mRootViewGroup.addView(mCameraPreviewView);
+
+        // 画面をタップしたら撮影する
         mCameraPreviewView.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                if (mCameraAvailable) {
+                if (mCameraAvailable) { // 写真の生成中は撮影しない
                     mCameraPreviewView.mCamera.takePicture(null, null, null,
                             kPictureCallback);
                     mCameraAvailable = false;
@@ -70,7 +72,10 @@ public class PortraitCameraSampleActivity extends Activity {
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         canvas.rotate(degrees, width / 2, height / 2);
-        int offset = (height - width) / 2 * ((degrees - 180) % 180) / 90;
+
+        int offset = (degrees % 180 == 0) ? 0 : (degrees == 90)
+                ? (width - height) / 2
+                : (height - width) / 2;
 
         canvas.translate(offset, -offset);
         canvas.drawBitmap(cameraBitmap, 0, 0, null);
@@ -111,26 +116,37 @@ public class PortraitCameraSampleActivity extends Activity {
                     .getCameraDisplayOrientation(PortraitCameraSampleActivity.this);
             Log.d(TAG, "Camera rotation degrees: " + degrees);
 
+            // 回転された画像を得る。
             Bitmap rotatedBitmap = getMutableRotatedCameraBitmap(bitmap, degrees);
             // Bitmap rotatedBitmap = getImmutableRotatedCameraBitmap(bitmap, degrees);
 
             showPicture(rotatedBitmap);
-
         }
     };
 
+    /**
+     * 撮影した写真を画面に表示する。
+     * 保存用のロジックもここに記述している。
+     * 
+     * @param bitmap
+     *            写真
+     */
     private void showPicture(final Bitmap bitmap) {
 
+        // Inflaterを使ってxmlのレイアウトを画面上に貼り付ける
         final View pictureView = getLayoutInflater().inflate(R.layout.picture, null);
         mRootViewGroup.addView(pictureView);
+
         ImageView iv = (ImageView) findViewById(R.id.picture);
         iv.setImageBitmap(bitmap);
         final Button saveButton = (Button) findViewById(R.id.save_button);
+
         View.OnClickListener listener = new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
                 if (v.equals(saveButton)) {
+                    // クリックされたビューが保存ボタンなら画像を保存する
                     String path = MediaStore.Images.Media.insertImage(
                             PortraitCameraSampleActivity.this.getContentResolver(),
                             bitmap, "", "");
@@ -139,7 +155,7 @@ public class PortraitCameraSampleActivity extends Activity {
                 }
                 Log.d(TAG, "Picture dismissed");
                 mRootViewGroup.removeView(pictureView);
-                
+
                 mCameraPreviewView.mCamera.startPreview(); // カメラを再起動
                 mCameraAvailable = true;
             }

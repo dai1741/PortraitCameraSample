@@ -1,4 +1,5 @@
 //This class is derived from The Android Open Source Project.
+// http://developer.android.com/resources/samples/ApiDemos/src/com/example/android/apis/graphics/CameraPreview.html
 
 /*
  * Copyright (C) 2007 The Android Open Source Project
